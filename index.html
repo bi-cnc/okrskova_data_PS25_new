@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Okrsková mapa – výsledky 2021</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 90vh;
+            width: 100%;
+        }
+        .legend {
+            background: white;
+            padding: 10px;
+            line-height: 1.4em;
+            font-size: 14px;
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <h2>Okrsková mapa – vítězné strany</h2>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <script>
+        var map = L.map('map').setView([49.8175, 15.4745], 7);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/">OSM</a> contributors'
+        }).addTo(map);
+
+        // Barvy podle tvého screenshotu
+        var colors = {
+            "ANO": "#3F3080",
+            "ČSSD": "#f77d02",
+            "KSČM": "#FF0000",
+            "Piráti+STAN": "#010E17",
+            "PŘÍSAHA": "#00B9F2",
+            "SPD": "#4B1D04",
+            "SPOLU": "#0a59f7",
+            "TSS": "#f70ad8",
+            "Volný blok": "#c4c0c4"
+        };
+
+        function getColor(vitez) {
+            return colors[vitez] || "#CCCCCC"; // default šedá
+        }
+
+        // Načtení GeoJSONu
+        $.getJSON('mapa_okrsku.geojson', function(data) {
+            L.geoJSON(data, {
+                style: function(feature) {
+                    return {
+                        color: "#333",
+                        weight: 0.5,
+                        fillColor: getColor(feature.properties.Vítěz),
+                        fillOpacity: 0.7
+                    };
+                },
+                onEachFeature: function(feature, layer) {
+                    var props = feature.properties;
+
+                    var content = `
+                        <div style="font-size:14px; line-height:1.4em;">
+                            <p><strong>Název okrsku</strong><br>${props["Název okrsku"] || '-'}</p>
+                            <p><strong>Obec/Městská část</strong><br>${props["Obec/Městská část"] || '-'}</p>
+                            <p><strong>Volební účast (v %)</strong><br>${props["Volební účast (v %)"] || '-'}</p>
+                            <p><strong>Výsledek</strong><br>${props["Výsledek"] || '-'}</p>
+                        </div>
+                    `;
+
+                    layer.bindPopup(content);
+                }
+            }).addTo(map);
+        });
+
+        // Legenda
+        var legend = L.control({position: 'bottomright'});
+
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            var parties = Object.keys(colors);
+
+            parties.forEach(function(party) {
+                div.innerHTML +=
+                    '<i style="background:' + colors[party] + '"></i> ' +
+                    party + '<br>';
+            });
+
+            return div;
+        };
+
+        legend.addTo(map);
+    </script>
+</body>
+</html>
+
